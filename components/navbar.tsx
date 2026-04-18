@@ -1,331 +1,149 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton, useUser } from "@clerk/nextjs";
-import { useTheme } from "next-themes";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import {
-  Moon,
-  Sun,
-  Menu,
-  Home,
-  LayoutDashboard,
-  ShieldCheck,
-  ChevronRight,
-  Laptop,
-} from "lucide-react";
+import { ShoppingBag, ShoppingCart, ShieldCheck, Menu, Sparkles } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuList,
-  NavigationMenuItem,
-} from "@/components/ui/navigation-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetClose,
-} from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
 
-// Navigation links configuration
-const navigationLinks = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
+type NavLink = {
+  href: string;
+  label: string;
+  adminOnly?: boolean;
+};
+
+const links: NavLink[] = [
+  { href: "/", label: "Home" },
+  { href: "/shop", label: "Shop" },
+  { href: "/cart", label: "Cart" },
+  { href: "/admin", label: "CMS", adminOnly: true },
 ];
 
 const publicRoutes = ["/auth", "/pending", "/403", "/account-not-found"];
 
 export function Navbar() {
-  const [mounted, setMounted] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const { user } = useUser();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Check admin role via Convex
   const dbUser = useQuery(
     api.functions.queries.getUserByClerkId,
     user?.id ? { clerk_user_id: user.id } : "skip",
   );
 
   const isAdmin = dbUser?.role === "admin";
+  const isPublicRoute = publicRoutes.some((route) => pathname?.startsWith(route));
 
-  useEffect(() => {
-    setMounted(true);
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const isPublicRoute = publicRoutes.some((route) =>
-    pathname?.startsWith(route),
-  );
-
-  if (isPublicRoute) return null;
-
-  if (!mounted) {
-    return (
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2 font-bold text-xl">
-              <div className="size-8 rounded-lg bg-primary/20 animate-pulse" />
-              <span>App</span>
-            </div>
-            <div className="size-9 rounded-md bg-muted animate-pulse" />
-          </div>
-        </div>
-      </header>
-    );
+  if (isPublicRoute) {
+    return null;
   }
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300",
-        scrolled
-          ? "border-b bg-background/80 backdrop-blur-md shadow-sm"
-          : "bg-transparent",
-      )}
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Brand */}
-          <div className="flex items-center gap-8">
-            <Link
-              href="/"
-              className="flex items-center gap-2.5 transition-transform hover:scale-[1.02] active:scale-95"
-            >
-              <div className="flex size-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-                <span className="text-lg font-bold text-primary-foreground">
-                  A
-                </span>
-              </div>
-              <span className="hidden text-xl font-bold tracking-tight sm:inline-block">
-                Nexus
-              </span>
-            </Link>
-
-            {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center">
-              <NavigationMenu>
-                <NavigationMenuList className="gap-4 flex flex-row">
-                  {navigationLinks.map((link) => {
-                    if (link.adminOnly && !isAdmin) return null;
-                    const Icon = link.icon;
-                    const active = pathname === link.href;
-
-                    return (
-                      <NavigationMenuItem key={link.href}>
-                        <Link href={link.href} className={`flex flex-row items-center gap-2 ${active ? "bg-neutral-800/50" : ""} px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-primary/10 data-[state=open]:bg-primary/10`}>
-                          <Icon className="size-4" />
-                          {link.label}
-                        </Link>
-                      </NavigationMenuItem>
-                    );
-                  })}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </nav>
+    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_8px_30px_rgb(153,205,216,0.45)]">
+            <ShoppingBag className="size-5" />
           </div>
+          <div className="leading-none">
+            <p className="display-title text-xl">Velocity Kicks</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+              Street + Sport
+            </p>
+          </div>
+        </Link>
 
-          {/* Action Area */}
-          <div className="flex items-center gap-3">
-            {/* Theme Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-full hover:bg-primary/10 flex items-center justify-center"
-                >
-                  <Sun className="size-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                  <Moon className="absolute size-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                  <span className="sr-only">Toggle theme</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                <DropdownMenuItem
-                  onClick={() => setTheme("light")}
-                  className="gap-2"
-                >
-                  <Sun className="size-4" /> Light
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setTheme("dark")}
-                  className="gap-2"
-                >
-                  <Moon className="size-4" /> Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setTheme("system")}
-                  className="gap-2"
-                >
-                  <Laptop className="size-4" /> System
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <nav className="hidden items-center gap-2 md:flex">
+          {links.map((link) => {
+            if (link.adminOnly && !isAdmin) {
+              return null;
+            }
 
-            <div className="hidden h-10 w-px bg-border sm:block" />
-
-            <div className="hidden sm:flex items-center">
-              <SignedIn>
-                <div className="flex items-center gap-3">
-                  <UserButton
-                    appearance={{
-                      elements: {
-                        userButtonAvatarBox:
-                          "size-9 border-2 border-primary/10 hover:border-primary/30 transition-all",
-                      },
-                    }}
-                  />
-                </div>
-              </SignedIn>
-              <SignedOut>
-                <Button
-                  asChild
-                  className="rounded-full px-6 h-10 shadow-md transition-all hover:shadow-lg active:scale-95 flex items-center"
-                >
-                  <Link href="/auth">Sign In</Link>
-                </Button>
-              </SignedOut>
-            </div>
-
-            {/* Mobile Nav Trigger */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 lg:hidden rounded-full hover:bg-primary/10 flex items-center justify-center"
-                >
-                  <Menu className="size-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="flex w-full flex-col p-0 sm:max-w-xs overflow-hidden"
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-semibold transition-all",
+                  active
+                    ? "bg-foreground text-background"
+                    : "text-foreground/80 hover:bg-foreground/10 hover:text-foreground",
+                )}
               >
-                <SheetHeader className="border-b p-6 text-left bg-background/50 backdrop-blur-md">
-                  <SheetTitle className="flex items-center gap-2">
-                    <div className="size-8 rounded-lg bg-primary" />
-                    <span>Navigation</span>
-                  </SheetTitle>
-                </SheetHeader>
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-                <div className="flex flex-1 flex-col justify-between p-6 overflow-y-auto">
-                  <nav className="space-y-2">
-                    {navigationLinks.map((link) => {
-                      if (link.adminOnly && !isAdmin) return null;
-                      const Icon = link.icon;
-                      const active = pathname === link.href;
+        <div className="flex items-center gap-2">
+          <SignedIn>
+            <Link href="/cart" className="hidden sm:block">
+              <Button variant="outline" size="sm" className="rounded-full">
+                <ShoppingCart className="size-4" />
+                Cart
+              </Button>
+            </Link>
+            <div className="hidden sm:block">
+              <UserButton
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox:
+                      "size-9 border border-border bg-background shadow-[0_0_0_4px_rgba(153,205,216,0.25)]",
+                  },
+                }}
+              />
+            </div>
+          </SignedIn>
 
-                      return (
-                        <SheetClose key={link.href} asChild>
-                          <Link
-                            href={link.href}
-                            className={cn(
-                              "flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all active:scale-[0.98]",
-                              active
-                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                            )}
-                          >
-                            <div className="flex items-center gap-3">
-                              <Icon className="size-5" />
-                              {link.label}
-                            </div>
-                            <ChevronRight
-                              className={cn(
-                                "size-4 opacity-50",
-                                active && "opacity-100",
-                              )}
-                            />
-                          </Link>
-                        </SheetClose>
-                      );
-                    })}
-                  </nav>
+          <SignedOut>
+            <Button asChild className="rounded-full px-5">
+              <Link href="/auth">Sign In</Link>
+            </Button>
+          </SignedOut>
 
-                  <div className="space-y-6 pt-6 mt-auto">
-                    <div className="flex justify-center gap-2 rounded-xl border bg-muted/20 p-1">
-                      <Button
-                        variant={theme === "light" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setTheme("light")}
-                        className="flex-1 rounded-lg"
-                      >
-                        <Sun className="size-4" />
-                      </Button>
-                      <Button
-                        variant={theme === "dark" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setTheme("dark")}
-                        className="flex-1 rounded-lg"
-                      >
-                        <Moon className="size-4" />
-                      </Button>
-                      <Button
-                        variant={theme === "system" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setTheme("system")}
-                        className="flex-1 rounded-lg"
-                      >
-                        <Laptop className="size-4" />
-                      </Button>
-                    </div>
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full md:hidden">
+                <Menu className="size-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full max-w-xs border-l border-border/80 bg-card">
+              <SheetHeader>
+                <SheetTitle className="display-title text-2xl">Menu</SheetTitle>
+              </SheetHeader>
+              <div className="mt-8 space-y-3">
+                {links.map((link) => {
+                  if (link.adminOnly && !isAdmin) {
+                    return null;
+                  }
 
-                    <div className="h-px bg-border" />
-
-                    <SignedIn>
-                      <div className="flex items-center gap-4 rounded-2xl border bg-muted/30 p-4 transition-colors hover:bg-muted/50">
-                        <UserButton
-                          appearance={{
-                            elements: {
-                              userButtonAvatarBox: "size-12 shadow-sm",
-                              userButtonTrigger: "focus:ring-0",
-                            },
-                          }}
-                        />
-                        <div className="flex flex-col overflow-hidden">
-                          <span className="text-sm font-semibold truncate">
-                            {user?.fullName || "Account"}
-                          </span>
-                          <span className="text-xs text-muted-foreground truncate opacity-70">
-                            {user?.primaryEmailAddress?.emailAddress}
-                          </span>
-                        </div>
-                      </div>
-                    </SignedIn>
-                    <SignedOut>
-                      <SheetClose asChild>
-                        <Button
-                          asChild
-                          className="w-full rounded-xl py-6 text-base font-semibold shadow-md active:scale-95"
-                        >
-                          <Link href="/auth">Sign In</Link>
-                        </Button>
-                      </SheetClose>
-                    </SignedOut>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+                  const active = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "flex items-center justify-between rounded-xl px-4 py-3 font-semibold",
+                        active ? "bg-primary/35" : "bg-background/70",
+                      )}
+                    >
+                      {link.label}
+                      {link.adminOnly ? <ShieldCheck className="size-4" /> : <Sparkles className="size-4" />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

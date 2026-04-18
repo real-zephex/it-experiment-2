@@ -1,126 +1,151 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, UserCheck, Clock, ShieldCheck, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import {
+  Users,
+  UserCheck,
+  Clock,
+  ShieldCheck,
+  ArrowRight,
+  Boxes,
+  ShoppingCart,
+  Database,
+} from "lucide-react";
+import { toast } from "sonner";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function AdminOverviewPage() {
   const stats = useQuery(api.functions.queries.getAdminStats);
+  const seedCatalog = useMutation(api.functions.adminMutations.seedDemoCatalog);
+
+  const handleSeed = async (): Promise<void> => {
+    try {
+      const result = await seedCatalog({});
+      toast.success(`Seeded ${result.seeded_products} products for demo`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to seed catalog");
+    }
+  };
 
   if (!stats) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <Spinner />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
-        <p className="text-muted-foreground">
-          A high-level view of your application's user base and recent administrative actions.
-        </p>
+    <div className="space-y-12">
+      <div className="relative overflow-hidden rounded-[2.5rem] border border-white/5 bg-[#2e3935] p-10 md:p-16">
+        <div className="absolute -right-20 -top-20 size-80 rounded-full bg-[#99cdd8]/10 blur-3xl" />
+        
+        <div className="relative space-y-6">
+          <div className="flex items-center gap-3">
+             <div className="size-2 rounded-full bg-[#99cdd8] animate-pulse" />
+             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#99cdd8]">System Operational</p>
+          </div>
+          <h2 className="display-title text-6xl leading-none text-[#daebe3]">Command<br />Center</h2>
+          <p className="max-w-xl text-base text-[#daebe3]/60 leading-relaxed">
+            Manage catalog, monitor demo orders, and control the complete storefront narrative from a single, high-fidelity dashboard.
+          </p>
+          <div className="flex flex-wrap gap-4 pt-4">
+            <Button onClick={handleSeed} variant="luxury" className="rounded-full bg-[#99cdd8] text-[#25302d] hover:bg-[#99cdd8]/90">
+              <Database className="size-4" />
+              Seed Demo Catalog
+            </Button>
+            <Button asChild variant="outline" className="rounded-full border-white/10 hover:bg-white/5 text-[#daebe3]">
+              <Link href="/admin/products">Product Registry</Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-full border-white/10 hover:bg-white/5 text-[#daebe3]">
+              <Link href="/admin/collections">Curated Edits</Link>
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingUsers}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Confirmed Users</CardTitle>
-            <UserCheck className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.confirmedUsers}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Admins</CardTitle>
-            <ShieldCheck className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.adminUsers}</div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Total Users", value: stats.totalUsers, icon: Users, color: "#99cdd8" },
+          { label: "Pending Approval", value: stats.pendingUsers, icon: Clock, color: "#f3c3b2" },
+          { label: "Catalog Products", value: stats.productCount, icon: Boxes, color: "#cfd6c4" },
+          { label: "Demo Orders", value: stats.orderCount, icon: ShoppingCart, color: "#99cdd8" },
+        ].map((item, idx) => (
+          <div key={idx} className="rounded-3xl border border-white/5 bg-[#2e3935]/40 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]/40">{item.label}</p>
+              <item.icon className="size-4" style={{ color: item.color }} />
+            </div>
+            <p className="display-title text-4xl text-[#daebe3]">{item.value}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Recent Administrative Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
+        <div className="col-span-4 rounded-3xl border border-white/5 bg-[#2e3935]/40 p-8">
+           <h3 className="display-title text-xl mb-8 text-[#daebe3]">System Logs</h3>
+           <div className="space-y-6">
               {stats.recentActions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No recent actions recorded.</p>
+                <p className="text-sm text-[#daebe3]/40 italic">No recent logs recorded.</p>
               ) : (
                 stats.recentActions.map((action) => (
-                  <div key={action._id} className="flex items-center gap-4 border-b pb-2 last:border-0 last:pb-0">
+                  <div key={action._id} className="flex items-start gap-4 border-b border-white/5 pb-6 last:border-0 last:pb-0">
+                    <div className="size-2 rounded-full mt-1.5 bg-[#99cdd8]" />
                     <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {action.action_type.replace("_", " ").toUpperCase()}
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]">
+                        {action.action_type.replaceAll("_", " ")}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Target: {action.target_clerk_user_id}
-                      </p>
+                      {action.details ? (
+                        <p className="text-sm text-[#daebe3]/60 leading-relaxed">{action.details}</p>
+                      ) : null}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(action.created_at).toLocaleString()}
+                    <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#daebe3]/30">
+                      {new Date(action.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Quick Access</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Jump to the user management page to approve or remove users.
-              </p>
-              <Link href="/admin/users">
-                <Button className="w-full justify-between">
-                  Manage Users
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-            
-            <div className="pt-4 border-t">
-              <p className="text-xs text-muted-foreground">
-                Tip: You can filter users by their status on the management page to quickly find those awaiting your approval.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="col-span-3 space-y-4">
+           <div className="rounded-3xl border border-white/5 bg-[#2e3935]/40 p-8">
+              <h3 className="display-title text-xl mb-6 text-[#daebe3]">Quick Links</h3>
+              <div className="grid gap-3">
+                <Link href="/admin/users">
+                  <Button variant="outline" className="w-full justify-between h-14 rounded-2xl border-white/5 hover:bg-white/5 text-[#daebe3]">
+                    User Directory
+                    <UserCheck className="size-4 text-[#99cdd8]" />
+                  </Button>
+                </Link>
+                <Link href="/admin/products">
+                  <Button variant="outline" className="w-full justify-between h-14 rounded-2xl border-white/5 hover:bg-white/5 text-[#daebe3]">
+                    Product Registry
+                    <ArrowRight className="size-4 text-[#99cdd8]" />
+                  </Button>
+                </Link>
+                <Link href="/admin/orders">
+                  <Button variant="outline" className="w-full justify-between h-14 rounded-2xl border-white/5 hover:bg-white/5 text-[#daebe3]">
+                    Order Lifecycle
+                    <ShieldCheck className="size-4 text-[#99cdd8]" />
+                  </Button>
+                </Link>
+              </div>
+           </div>
+           
+           <div className="rounded-3xl border border-[#99cdd8]/20 bg-[#99cdd8]/5 p-8 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#99cdd8] mb-2">Live Storefront</p>
+              <p className="text-xs text-[#daebe3]/60 mb-6">View your changes in real-time on the public store.</p>
+              <Button asChild variant="luxury" className="w-full rounded-2xl bg-[#99cdd8] text-[#25302d]">
+                <Link href="/">Open Storefront</Link>
+              </Button>
+           </div>
+        </div>
       </div>
     </div>
   );

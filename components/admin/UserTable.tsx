@@ -16,20 +16,12 @@ import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 
-type User = {
-  _id: string;
-  clerk_user_id: string;
-  email: string;
-  name: string;
-  role: "user" | "admin";
-  status: "pending" | "confirmed" | "disabled";
-  created_at: number;
-  confirmed_at?: number;
-};
+type UserStatusFilter = "all" | "pending" | "confirmed" | "disabled";
 
 export function UserTable() {
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<UserStatusFilter>("all");
   const data = useQuery(api.functions.queries.listUsers, {
     page: 0,
     page_size: 100,
@@ -78,9 +70,9 @@ export function UserTable() {
     );
   }
 
-  const users = data.users as User[];
+  const users = data.users;
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: "pending" | "confirmed" | "disabled") => {
     switch (status) {
       case "confirmed":
         return <Badge variant="default">Confirmed</Badge>;
@@ -93,7 +85,7 @@ export function UserTable() {
     }
   };
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: "user" | "admin") => {
     return role === "admin" ? (
       <Badge variant="default">Admin</Badge>
     ) : (
@@ -102,71 +94,77 @@ export function UserTable() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        <Button
-          variant={statusFilter === "all" ? "default" : "outline"}
-          onClick={() => setStatusFilter("all")}
-          size="sm"
-        >
-          All
-        </Button>
-        <Button
-          variant={statusFilter === "pending" ? "default" : "outline"}
-          onClick={() => setStatusFilter("pending")}
-          size="sm"
-        >
-          Pending
-        </Button>
-        <Button
-          variant={statusFilter === "confirmed" ? "default" : "outline"}
-          onClick={() => setStatusFilter("confirmed")}
-          size="sm"
-        >
-          Confirmed
-        </Button>
-        <Button
-          variant={statusFilter === "disabled" ? "default" : "outline"}
-          onClick={() => setStatusFilter("disabled")}
-          size="sm"
-        >
-          Disabled
-        </Button>
+    <div className="space-y-8">
+      <div className="flex flex-wrap gap-2">
+        {(["all", "pending", "confirmed", "disabled"] as const).map((filter) => (
+          <Button
+            key={filter}
+            variant={statusFilter === filter ? "luxury" : "outline"}
+            className={cn(
+              "rounded-full px-6 h-10 text-[10px] font-bold uppercase tracking-[0.2em]",
+              statusFilter === filter 
+                ? "bg-[#99cdd8] text-[#25302d]" 
+                : "border-white/5 bg-transparent text-[#daebe3]/40 hover:bg-white/5 hover:text-[#daebe3]"
+            )}
+            onClick={() => setStatusFilter(filter)}
+            size="sm"
+          >
+            {filter}
+          </Button>
+        ))}
       </div>
 
-      <div className="border rounded-lg">
+      <div className="rounded-3xl border border-white/5 bg-[#25302d]/40 overflow-hidden">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+          <TableHeader className="bg-white/5 border-none">
+            <TableRow className="border-white/5 hover:bg-transparent">
+              <TableHead className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]/40 h-14 px-6">Name</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]/40 h-14 px-6">Email</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]/40 h-14 px-6">Role</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]/40 h-14 px-6">Status</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]/40 h-14 px-6">Created</TableHead>
+              <TableHead className="text-right text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]/40 h-14 px-6">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No users found
+              <TableRow className="border-white/5 hover:bg-transparent">
+                <TableCell colSpan={6} className="h-40 text-center text-[#daebe3]/20 italic">
+                  No users found in directory
                 </TableCell>
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow key={user._id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell>
+                <TableRow key={user._id} className="border-white/5 hover:bg-white/5 transition-colors">
+                  <TableCell className="px-6 py-5 font-bold text-[#daebe3] tracking-tight">{user.name}</TableCell>
+                  <TableCell className="px-6 py-5 text-[#daebe3]/60">{user.email}</TableCell>
+                  <TableCell className="px-6 py-5">
+                    <Badge className={cn(
+                      "rounded-full px-3 py-1 text-[8px]",
+                      user.role === "admin" ? "bg-[#99cdd8]/10 text-[#99cdd8] border-[#99cdd8]/20" : "bg-white/5 text-[#daebe3]/40 border-white/10"
+                    )}>
+                      {user.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-5">
+                    <Badge className={cn(
+                      "rounded-full px-3 py-1 text-[8px]",
+                      user.status === "confirmed" ? "bg-green-500/10 text-green-400 border-green-500/20" : 
+                      user.status === "pending" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" : 
+                      "bg-red-500/10 text-red-400 border-red-500/20"
+                    )}>
+                      {user.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-5 text-[#daebe3]/30 text-xs">
                     {new Date(user.created_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
+                  <TableCell className="px-6 py-5 text-right space-x-2">
                     {user.status === "pending" && (
                       <Button
                         size="sm"
+                        variant="luxury"
+                        className="rounded-xl bg-[#99cdd8] text-[#25302d] px-4 h-9"
                         onClick={() => handleConfirmUser(user.clerk_user_id)}
                         disabled={confirmingUserId === user.clerk_user_id}
                       >
@@ -191,8 +189,8 @@ export function UserTable() {
         </Table>
       </div>
 
-      <div className="text-sm text-muted-foreground">
-        Showing {users.length} of {data.total} users
+      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#daebe3]/20">
+        Directory Count: {users.length} / {data.total}
       </div>
     </div>
   );
